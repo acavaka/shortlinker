@@ -1,24 +1,18 @@
 package storage
 
-type SimpleURLMapper struct {
+type Storage struct {
 	URLs map[string]string
 }
 
-func NewSimpleURLMapper() *SimpleURLMapper {
-	return &SimpleURLMapper{URLs: make(map[string]string)}
-}
-
-func (m *SimpleURLMapper) Get(shortLink string) (string, bool) {
+func (m *Storage) Get(shortLink string) (string, bool) {
 	longLink, ok := m.URLs[shortLink]
 	return longLink, ok
 }
 
-func (m *SimpleURLMapper) Set(shortLink, longLink string) {
+func (m *Storage) Save(shortLink, longLink string) {
 	m.URLs[shortLink] = longLink
 }
 
-func (m *SimpleURLMapper) Count() int {
-	return len(m.URLs)
+func LoadStorage() *Storage {
+	return &Storage{URLs: make(map[string]string)}
 }
-
-var Mapper = NewSimpleURLMapper()
