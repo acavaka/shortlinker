@@ -6,7 +6,7 @@ import (
 
 type ServerConfig struct {
 	ServerAddress string `env:"SERVER_ADDRESS" env-default:":8080"`
-	BaseURL       string `env:"BASE_URL" env-default:"http://localhost:8080"`
+	BaseURL       string `env:"BASE_URL" env-default:"http://127.0.0.1:8080"`
 }
 
 type URLDetail struct {
