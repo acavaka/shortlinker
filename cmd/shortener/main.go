@@ -1,13 +1,10 @@
 package main
 
 import (
-	"context"
 	"log"
+	"net"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"strings"
 
 	"github.com/acavaka/shortlinker/internal/config"
 	"github.com/acavaka/shortlinker/internal/handlers"
@@ -15,36 +12,45 @@ import (
 	"github.com/acavaka/shortlinker/internal/storage"
 )
 
+func normalizeAddress(addr string) string {
+	if strings.Contains(addr, "[") {
+		return addr
+	}
+
+	if strings.HasPrefix(addr, ":") {
+		return addr
+	}
+
+	if addr == "localhost:8080" || addr == "127.0.0.1:8080" {
+		return "[::1]:8080"
+	}
+
+	return addr
+}
+
 func main() {
 	cfg := config.LoadConfig()
+
+	normalizedAddr := normalizeAddress(cfg.Server.ServerAddress)
+
 	db := storage.LoadStorage()
-	svc := &service.Service{DB: db, BaseURL: cfg.Server.BaseURL}
+	svc := &service.Service{
+		DB:      db,
+		BaseURL: cfg.Server.BaseURL,
+	}
 	r := handlers.NewRouter(svc)
 
-	addr := ":8080"
+	listener, err := net.Listen("tcp", normalizedAddr)
+	if err != nil {
+		log.Fatalf("failed to create listener: %v", err)
+	}
 
 	srv := &http.Server{
-		Addr:    addr,
 		Handler: r,
 	}
 
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		log.Printf("Server starting on %s", addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
-		}
-	}()
-
-	<-done
-	log.Print("Server stopping...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("Server shutdown error: %v", err)
+	log.Printf("server started on: %s", listener.Addr().String())
+	if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("got unexpected error: %s", err)
 	}
 }
