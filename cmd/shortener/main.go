@@ -4,10 +4,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/acavaka/shortlinker/internal/config"
-	"github.com/acavaka/shortlinker/internal/handlers"
-	"github.com/acavaka/shortlinker/internal/service"
-	"github.com/acavaka/shortlinker/internal/storage"
+	"shortlinker/internal/config"
+	"shortlinker/internal/handlers"
+	"shortlinker/internal/service"
+	"shortlinker/internal/storage"
 )
 
 func main() {

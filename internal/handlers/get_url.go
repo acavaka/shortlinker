@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/acavaka/shortlinker/internal/service"
+	"shortlinker/internal/service"
 )
 
 func GetHandler(svc *service.Service) http.HandlerFunc {
