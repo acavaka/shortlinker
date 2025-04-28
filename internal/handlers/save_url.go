@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"shortlinker/internal/service"
+	"github.com/acavaka/shortlinker/internal/service"
 )
 
 func SaveHandler(svc *service.Service) http.HandlerFunc {

@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"shortlinker/internal/config"
-	"shortlinker/internal/service"
+	"github.com/acavaka/shortlinker/internal/config"
+	"github.com/acavaka/shortlinker/internal/service"
 )
 
 type MockDB struct {

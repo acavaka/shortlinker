@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"shortlinker/internal/config"
-	"shortlinker/internal/service"
-	"shortlinker/internal/storage"
+	"github.com/acavaka/shortlinker/internal/config"
+	"github.com/acavaka/shortlinker/internal/service"
+	"github.com/acavaka/shortlinker/internal/storage"
 )
 
 func TestSaveHandler(t *testing.T) {
