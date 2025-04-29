@@ -12,7 +12,7 @@
 *.out
 
 # Binaries
-cmd/shortener/main
+cmd/shortlinker/main
 cmd/shortener/shortener
 
 # Dependency directories (remove the comment below to include it)
