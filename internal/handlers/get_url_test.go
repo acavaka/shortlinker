@@ -47,7 +47,7 @@ func TestGetHandler(t *testing.T) {
 		want    want
 	}{
 		{
-			name:    "Positive GET #1",
+			name:    "existing_link_redirects_to_ya_ru",
 			route:   "ABC1234X",
 			longURL: "https://ya.ru",
 			method:  http.MethodGet,
@@ -58,7 +58,7 @@ func TestGetHandler(t *testing.T) {
 			},
 		},
 		{
-			name:    "Positive GET #2",
+			name:    "existing_link_redirects_to_ozon_ru",
 			route:   "Ur0lH9i9",
 			longURL: "https://ozon.ru",
 			method:  http.MethodGet,
@@ -69,7 +69,7 @@ func TestGetHandler(t *testing.T) {
 			},
 		},
 		{
-			name:    "Negative GET #1",
+			name:    "missing_link_returns_400",
 			route:   "MissingRoute",
 			longURL: "",
 			method:  http.MethodGet,
@@ -92,18 +92,23 @@ func TestGetHandler(t *testing.T) {
 			router.ServeHTTP(w, r)
 
 			res := w.Result()
-			_, err := io.ReadAll(res.Body)
-			if err != nil {
-				return
-			}
-			err = res.Body.Close()
-			if err != nil {
-				return
+			defer res.Body.Close() // лучше defer для 100% закрытия?
+
+			resBody, err := io.ReadAll(res.Body)
+			require.NoError(t, err, "Ошибка при чтении тела ответа")
+
+			if tt.want.success {
+				assert.NotEmpty(t, resBody,
+					"Для существующей ссылки тело ответа не должно быть пустым")
+			} else {
+				assert.Empty(t, resBody,
+					"Для отсутствующей ссылки тело ответа должно быть пустым")
 			}
 
-			require.NoError(t, err)
-			assert.NotEmpty(t, res.Body)
-			assert.Equal(t, tt.want.statusCode, res.StatusCode)
+			assert.Equal(t, tt.want.statusCode, res.StatusCode,
+				"Ожидался статус %d (%s), получен %d (%s)",
+				tt.want.statusCode, http.StatusText(tt.want.statusCode),
+				res.StatusCode, http.StatusText(res.StatusCode))
 		})
 	}
 }
