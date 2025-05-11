@@ -50,7 +50,9 @@ func main() {
 	}
 
 	log.Printf("server started on: %s", listener.Addr().String())
-	if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("got unexpected error: %s", err)
+	if err := srv.Serve(listener); err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("got unexpected error: %s", err)
+		}
 	}
 }
