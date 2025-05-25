@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/acavaka/shortlinker/internal/logger"
 	"github.com/acavaka/shortlinker/internal/service"
 )
 
@@ -19,7 +19,7 @@ func SaveHandler(svc *service.Service) http.HandlerFunc {
 
 		long, err := io.ReadAll(r.Body)
 		if err != nil {
-			log.Printf("failed to read body: %v", err)
+			logger.Error("failed to read body", err)
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
@@ -46,7 +46,7 @@ func SaveHandler(svc *service.Service) http.HandlerFunc {
 
 		resultURL, err := url.JoinPath(svc.BaseURL, short)
 		if err != nil {
-			log.Printf("failed to join path to get result URL: %v", err)
+			logger.Error("failed to join path to get result URL", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -55,7 +55,7 @@ func SaveHandler(svc *service.Service) http.HandlerFunc {
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write([]byte(resultURL))
 		if err != nil {
-			log.Printf("failed to write the full URL response to client: %v", err)
+			logger.Error("failed to write the full URL response to client", err)
 		}
 	}
 }

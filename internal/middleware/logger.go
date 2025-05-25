@@ -4,45 +4,25 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+
+	"github.com/acavaka/shortlinker/internal/logger"
 )
 
-type responseWriter struct {
-	http.ResponseWriter
-	status int
-	size   int
-}
-
-func (rw *responseWriter) WriteHeader(status int) {
-	rw.status = status
-	rw.ResponseWriter.WriteHeader(status)
-}
-
-func (rw *responseWriter) Write(b []byte) (int, error) {
-	size, err := rw.ResponseWriter.Write(b)
-	rw.size += size
-	return size, err
-}
-
-func WithLogging(logger *zap.Logger) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-
-			wrapped := &responseWriter{
-				ResponseWriter: w,
-				status:         http.StatusOK,
-			}
-
-			next.ServeHTTP(wrapped, r)
-
-			logger.Info("request processed",
-				zap.String("uri", r.RequestURI),
+func Logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		defer func() {
+			logger.Info("Request completed",
 				zap.String("method", r.Method),
+				zap.String("path", r.URL.Path),
+				zap.Int("status", ww.Status()),
+				zap.Int("size", ww.BytesWritten()),
 				zap.Duration("duration", time.Since(start)),
-				zap.Int("status", wrapped.status),
-				zap.Int("response_size", wrapped.size),
 			)
-		})
-	}
+		}()
+		next.ServeHTTP(ww, r)
+	})
 }

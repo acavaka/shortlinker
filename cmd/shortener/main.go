@@ -2,13 +2,13 @@ package main
 
 import (
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	"strings"
 
 	"github.com/acavaka/shortlinker/internal/config"
 	"github.com/acavaka/shortlinker/internal/handlers"
+	"github.com/acavaka/shortlinker/internal/logger"
 	"github.com/acavaka/shortlinker/internal/service"
 	"github.com/acavaka/shortlinker/internal/storage"
 	"go.uber.org/zap"
@@ -31,36 +31,34 @@ func normalizeAddress(addr string) string {
 }
 
 func main() {
-	logger, err := zap.NewProduction()
-	if err != nil {
-		log.Fatalf("failed to initialize logger: %v", err)
-	}
-	defer logger.Sync()
+	log := logger.Initialize()
+	defer log.Sync()
 
 	cfg := config.LoadConfig()
 
-	normalizedAddr := normalizeAddress(cfg.Server.ServerAddress)
+	normalizedAddr := normalizeAddress(cfg.Service.ServerAddress)
 
-	db := storage.LoadStorage()
-	svc := &service.Service{
-		DB:      db,
-		BaseURL: cfg.Server.BaseURL,
+	db, err := storage.NewStorage(cfg)
+	if err != nil {
+		log.Error("failed to load storage", zap.Error(err))
 	}
-	r := handlers.NewRouter(svc, logger)
+	svc := &service.Service{DB: db, BaseURL: cfg.Service.BaseURL, FileStoragePath: cfg.Service.FileStoragePath}
+	r := handlers.NewRouter(svc)
 
 	listener, err := net.Listen("tcp", normalizedAddr)
 	if err != nil {
-		logger.Fatal("failed to create listener", zap.Error(err))
+		log.Fatal("failed to create listener", zap.Error(err))
 	}
 
 	srv := &http.Server{
+		Addr:    cfg.Service.ServerAddress,
 		Handler: r,
 	}
 
-	logger.Info("server started", zap.String("address", listener.Addr().String()))
+	log.Info("server started", zap.String("address", listener.Addr().String()))
 	if err := srv.Serve(listener); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
-			logger.Fatal("unexpected error", zap.Error(err))
+			log.Error("unexpected error", zap.Error(err))
 		}
 	}
 }
