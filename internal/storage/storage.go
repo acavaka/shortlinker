@@ -44,7 +44,7 @@ func (s *inFile) Save(shortLink, longLink string) {
 	s.urls[shortLink] = longLink
 	err := AppendToFile(s.filePath, shortLink, longLink, s.counter)
 	if err != nil {
-		logger.Error("failed append to file", err)
+		logger.Error("failed to append to file", err)
 	}
 	s.counter++
 }
