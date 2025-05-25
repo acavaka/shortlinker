@@ -1,3 +1,4 @@
+// Package storage provides interfaces and implementations for URL storage
 package storage
 
 import (
@@ -8,78 +9,85 @@ import (
 	"github.com/acavaka/shortlinker/internal/logger"
 )
 
-type inMemory struct {
-	urls    map[string]string
-	mux     *sync.RWMutex
-	counter uint64
+var ErrStorageRestore = fmt.Errorf("failed to restore storage from file")
+
+type InMemoryStorage struct {
+	urlMappings map[string]string
+	mutex       *sync.RWMutex
+	counter     uint64
 }
 
-type inFile struct {
-	inMemory
+type FileStorage struct {
+	InMemoryStorage
 	filePath string
 }
 
 type URLStorage interface {
-	Get(shortLink string) (string, bool)
-	Save(shortLink, longLink string)
+	Get(shortURL string) (string, bool)
+
+	Save(shortURL, longURL string)
 }
 
-func (s *inMemory) Get(shortLink string) (string, bool) {
-	s.mux.RLock()
-	longLink, ok := s.urls[shortLink]
-	s.mux.RUnlock()
-	return longLink, ok
+func (storage *InMemoryStorage) Get(shortURL string) (string, bool) {
+	storage.mutex.RLock()
+	longURL, exists := storage.urlMappings[shortURL]
+	storage.mutex.RUnlock()
+	return longURL, exists
 }
 
-func (s *inMemory) Save(shortLink, longLink string) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.urls[shortLink] = longLink
-	s.counter++
+func (storage *InMemoryStorage) Save(shortURL, longURL string) {
+	storage.mutex.Lock()
+	defer storage.mutex.Unlock()
+	storage.urlMappings[shortURL] = longURL
+	storage.counter++
 }
 
-func (s *inFile) Save(shortLink, longLink string) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.urls[shortLink] = longLink
-	err := AppendToFile(s.filePath, shortLink, longLink, s.counter)
+func (storage *FileStorage) Save(shortURL, longURL string) {
+	storage.mutex.Lock()
+	defer storage.mutex.Unlock()
+	storage.urlMappings[shortURL] = longURL
+	if err := AppendToFile(storage.filePath, shortURL, longURL, storage.counter); err != nil {
+		logger.Error("failed to persist URL mapping to file", err)
+	}
+	storage.counter++
+}
+
+func (storage *FileStorage) restore() error {
+	if storage.filePath == "" {
+		return nil
+	}
+
+	mapping, err := ReadFileStorage(storage.filePath)
 	if err != nil {
-		logger.Error("failed to append to file", err)
+		return fmt.Errorf("%w: %v", ErrStorageRestore, err)
 	}
-	s.counter++
-}
 
-func (s *inFile) restore() error {
-	if s.filePath != "" {
-		mapping, err := ReadFileStorage(s.filePath)
-		if err != nil {
-			return fmt.Errorf("failed to restore from file %w", err)
-		}
-		s.mux.Lock()
-		s.urls = mapping
-		s.counter = uint64(len(mapping))
-		s.mux.Unlock()
-	}
+	storage.mutex.Lock()
+	storage.urlMappings = mapping
+	storage.counter = uint64(len(mapping))
+	storage.mutex.Unlock()
+
 	return nil
 }
 
 func NewStorage(cfg *config.Config) (URLStorage, error) {
 	if cfg.Service.FileStoragePath == "" {
-		return &inMemory{
-			urls: make(map[string]string),
-			mux:  &sync.RWMutex{},
+		return &InMemoryStorage{
+			urlMappings: make(map[string]string),
+			mutex:       &sync.RWMutex{},
 		}, nil
 	}
-	storage := &inFile{
-		inMemory: inMemory{
-			urls: make(map[string]string),
-			mux:  &sync.RWMutex{},
+
+	storage := &FileStorage{
+		InMemoryStorage: InMemoryStorage{
+			urlMappings: make(map[string]string),
+			mutex:       &sync.RWMutex{},
 		},
 		filePath: cfg.Service.FileStoragePath,
 	}
-	err := storage.restore()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build storage: %w", err)
+
+	if err := storage.restore(); err != nil {
+		return nil, fmt.Errorf("failed to initialize storage: %w", err)
 	}
 	return storage, nil
 }
