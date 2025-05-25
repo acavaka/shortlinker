@@ -11,6 +11,7 @@ import (
 	"github.com/acavaka/shortlinker/internal/handlers"
 	"github.com/acavaka/shortlinker/internal/service"
 	"github.com/acavaka/shortlinker/internal/storage"
+	"go.uber.org/zap"
 )
 
 func normalizeAddress(addr string) string {
@@ -30,6 +31,12 @@ func normalizeAddress(addr string) string {
 }
 
 func main() {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("failed to initialize logger: %v", err)
+	}
+	defer logger.Sync()
+
 	cfg := config.LoadConfig()
 
 	normalizedAddr := normalizeAddress(cfg.Server.ServerAddress)
@@ -39,21 +46,21 @@ func main() {
 		DB:      db,
 		BaseURL: cfg.Server.BaseURL,
 	}
-	r := handlers.NewRouter(svc)
+	r := handlers.NewRouter(svc, logger)
 
 	listener, err := net.Listen("tcp", normalizedAddr)
 	if err != nil {
-		log.Fatalf("failed to create listener: %v", err)
+		logger.Fatal("failed to create listener", zap.Error(err))
 	}
 
 	srv := &http.Server{
 		Handler: r,
 	}
 
-	log.Printf("server started on: %s", listener.Addr().String())
+	logger.Info("server started", zap.String("address", listener.Addr().String()))
 	if err := srv.Serve(listener); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("got unexpected error: %s", err)
+			logger.Fatal("unexpected error", zap.Error(err))
 		}
 	}
 }
