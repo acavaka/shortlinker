@@ -51,10 +51,10 @@ func TestLoadConfig(t *testing.T) {
 
 			assert.NotNil(t, cfg, "Config should not be nil")
 			assert.Equal(t, 8, cfg.URL.Length, "URL length should be 8")
-			
+
 			if tt.name == "env_vars_set" {
-				assert.Equal(t, tt.expectedBaseURL, cfg.Server.BaseURL)
-				assert.Equal(t, tt.expectedAddr, cfg.Server.ServerAddress)
+				assert.Equal(t, tt.expectedBaseURL, cfg.Service.BaseURL)
+				assert.Equal(t, tt.expectedAddr, cfg.Service.ServerAddress)
 			}
 		})
 	}

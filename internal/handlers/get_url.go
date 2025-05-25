@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/acavaka/shortlinker/internal/logger"
 	"github.com/acavaka/shortlinker/internal/service"
 )
 
@@ -15,23 +15,17 @@ func GetHandler(svc *service.Service) http.HandlerFunc {
 		short := chi.URLParam(r, "id")
 		long, err := svc.GetURL(short)
 		if err != nil {
-			log.Printf("failed to get URL: %v", err)
+			logger.Error("failed to get URL", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		origin, err := url.JoinPath(svc.BaseURL, short)
 		if err != nil {
-			log.Printf("failed to join path to get redirect URL: %v", err)
+			logger.Error("failed to join path to get redirect URL", err)
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-		http.Redirect(w, r, long, http.StatusTemporaryRedirect)
 		w.Header().Set("Location", origin)
-		_, err = w.Write([]byte(long))
-		if err != nil {
-			log.Printf("failed to write response: %v", err)
-			http.Error(w, "", http.StatusInternalServerError)
-			return
-		}
+		http.Redirect(w, r, long, http.StatusTemporaryRedirect)
 	}
 }

@@ -1,32 +1,126 @@
-# go-musthave-shortener-tpl
+# URL Shortener Service
 
-Шаблон репозитория для трека «Сервис сокращения URL».
+A robust and efficient URL shortening service written in Go. This service provides both in-memory and file-based storage options for URL mappings.
 
-## Начало работы
+## Features
 
-1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере.
-2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` — адрес вашего репозитория на GitHub без префикса `https://`) для создания модуля.
+- Generate short URLs from long URLs
+- Support for both in-memory and file-based storage
+- Thread-safe operations
+- Gzip compression support
+- Logging middleware
+- RESTful API endpoints
 
-## Обновление шаблона
+## Installation
 
-Чтобы иметь возможность получать обновления автотестов и других частей шаблона, выполните команду:
+### Prerequisites
+
+- Go 1.23.4 or higher
+- Git
+
+### Getting Started
+
+1. Clone the repository:
+```bash
+git clone https://github.com/acavaka/shortlinker.git
+cd shortlinker
+```
+
+2. Install dependencies:
+```bash
+go mod download
+```
+
+3. Build the project:
+```bash
+go build -o shortlinker ./cmd/shortlinker
+```
+
+## Usage
+
+### Running the Service
+
+```bash
+./shortlinker
+```
+
+By default, the service runs in memory-only mode. To enable file storage, set the appropriate configuration.
+
+### API Endpoints
+
+1. Create Short URL
+```http
+POST /api/shorten
+Content-Type: application/json
+
+{
+    "url": "https://example.com/very/long/url"
+}
+```
+
+2. Get Original URL
+```http
+GET /{shortURL}
+```
+
+3. Save URL (Alternative Endpoint)
+```http
+POST /
+Content-Type: application/json
+
+{
+    "url": "https://example.com/very/long/url"
+}
+```
+
+## Configuration
+
+The service can be configured using environment variables or a configuration file. Key configuration options include:
+
+- `FILE_STORAGE_PATH`: Path to the file storage (optional)
+- `BASE_URL`: Base URL for the shortened links
+- Other configuration options can be found in the `internal/config` package
+
+## Development
+
+### Project Structure
 
 ```
-git remote add -m main template https://github.com/Yandex-Practicum/go-musthave-shortener-tpl.git
+.
+├── cmd/
+│   ├── shortlinker/    # Main application
+│   └── shortener/      # CLI tool
+├── internal/
+│   ├── config/         # Configuration
+│   ├── handlers/       # HTTP handlers
+│   ├── logger/         # Logging
+│   ├── middleware/     # HTTP middleware
+│   ├── models/         # Data models
+│   ├── service/        # Business logic
+│   └── storage/        # Storage implementations
+└── README.md
 ```
 
-Для обновления кода автотестов выполните команду:
+### Running Tests
 
+To run all tests:
+```bash
+go test ./...
 ```
-git fetch template && git checkout template/main .github
+
+To run tests with coverage:
+```bash
+go test -cover ./...
 ```
 
-Затем добавьте полученные изменения в свой репозиторий.
+## Contributing
 
-## Запуск автотестов
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Для успешного запуска автотестов называйте ветки `iter<number>`, где `<number>` — порядковый номер инкремента. Например, в ветке с названием `iter4` запустятся автотесты для инкрементов с первого по четвёртый.
+## License
 
-При мёрже ветки с инкрементом в основную ветку `main` будут запускаться все автотесты.
-
-Подробнее про локальный и автоматический запуск читайте в [README автотестов](https://github.com/Yandex-Practicum/go-autotests).
+This project is licensed under the MIT License - see the LICENSE file for details.

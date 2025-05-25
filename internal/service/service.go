@@ -1,51 +1,52 @@
+// Package service provides business logic for URL shortening service
 package service
 
 import (
 	"fmt"
 	"math/rand"
+
+	"github.com/acavaka/shortlinker/internal/storage"
 )
 
-type URLStorage interface {
-	Get(shortLink string) (string, bool)
-	Save(shortLink, longLink string)
-}
+var ErrURLNotFound = fmt.Errorf("URL not found")
 
 type Service struct {
-	DB      URLStorage
-	BaseURL string
+	DB              storage.URLStorage
+	FileStoragePath string
+	BaseURL         string
 }
 
-func (s *Service) SaveURL(long string) string {
-	short := s.generateUniqueShortLink()
-	s.DB.Save(short, long)
-	return short
+func (svc *Service) SaveURL(longURL string) string {
+	shortURL := svc.generateUniqueShortLink()
+	svc.DB.Save(shortURL, longURL)
+	return shortURL
 }
 
-func (s *Service) GetURL(short string) (string, error) {
-	long, ok := s.DB.Get(short)
+func (svc *Service) GetURL(shortURL string) (string, error) {
+	longURL, ok := svc.DB.Get(shortURL)
 	if !ok {
-		return "", fmt.Errorf("not found long URL by passed short URL: %s", short)
+		return "", fmt.Errorf("%w: short URL '%s' does not exist in storage", ErrURLNotFound, shortURL)
 	}
-	return long, nil
+	return longURL, nil
 }
 
-func (s *Service) generateUniqueShortLink() string {
+func (svc *Service) generateUniqueShortLink() string {
 	const length = 8
-	var uniqString string
+	var uniqueShortURL string
 
 	for {
-		uniqStringCandidate := generateRandomString(length)
-		_, ok := s.DB.Get(uniqStringCandidate)
-		if !ok {
-			uniqString = uniqStringCandidate
+		shortURLCandidate := generateRandomString(length)
+		_, exists := svc.DB.Get(shortURLCandidate)
+		if !exists {
+			uniqueShortURL = shortURLCandidate
 			break
 		}
 	}
-	return uniqString
+	return uniqueShortURL
 }
 
 func generateRandomString(length int) string {
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	randomString := make([]byte, length)
 	for i := range randomString {
 		randomString[i] = charset[rand.Intn(len(charset))]
