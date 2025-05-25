@@ -22,5 +22,9 @@ func NewRouter(svc *service.Service, logger *zap.Logger) *chi.Mux {
 		r.Post("/", SaveHandler(svc))
 	})
 
+	router.Route("/api", func(r chi.Router) {
+		r.Post("/shorten", ShortenHandler(svc))
+	})
+
 	return router
 }
