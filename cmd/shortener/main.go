@@ -38,10 +38,20 @@ func main() {
 
 	normalizedAddr := normalizeAddress(cfg.Service.ServerAddress)
 
-	db, err := storage.NewStorage(cfg)
-	if err != nil {
-		log.Error("failed to load storage", zap.Error(err))
+	var (
+		db  storage.URLStorage
+		err error
+	)
+
+	if cfg.Service.FileStoragePath == "" {
+		db = storage.NewMemoryStorage(cfg)
+	} else {
+		db, err = storage.NewFileStorage(cfg)
+		if err != nil {
+			log.Fatal("failed to load storage", zap.Error(err))
+		}
 	}
+
 	svc := &service.Service{DB: db, BaseURL: cfg.Service.BaseURL, FileStoragePath: cfg.Service.FileStoragePath}
 	r := handlers.NewRouter(svc)
 

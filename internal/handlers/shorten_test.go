@@ -23,8 +23,7 @@ func TestShortenHandler(t *testing.T) {
 	)
 
 	cfg := config.LoadConfig()
-	db, err := storage.NewStorage(cfg)
-	assert.NoError(t, err)
+	db := storage.NewMemoryStorage(cfg)
 	svc := &service.Service{DB: db, BaseURL: cfg.Service.BaseURL}
 	type want struct {
 		statusCode  int
