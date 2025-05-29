@@ -5,20 +5,21 @@ import (
 	"sync"
 
 	"github.com/acavaka/shortlinker/internal/config"
-	"github.com/acavaka/shortlinker/internal/logger"
+	"go.uber.org/zap"
 )
 
 type FileStorage struct {
 	InMemoryStorage
 	filePath string
+	logger   *zap.Logger
 }
 
 func (storage *FileStorage) Save(shortURL, longURL string) {
 	storage.mutex.Lock()
 	defer storage.mutex.Unlock()
 	storage.urlMappings[shortURL] = longURL
-	if err := AppendToFile(storage.filePath, shortURL, longURL, storage.counter); err != nil {
-		logger.Error("failed to persist URL mapping to file", err)
+	if err := AppendToFile(storage.filePath, shortURL, longURL, storage.counter, storage.logger); err != nil {
+		storage.logger.Error("failed to persist URL mapping to file", zap.Error(err))
 	}
 	storage.counter++
 }
@@ -41,7 +42,7 @@ func (storage *FileStorage) restore() error {
 	return nil
 }
 
-func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
+func NewFileStorage(cfg *config.Config, logger *zap.Logger) (*FileStorage, error) {
 	storage := &FileStorage{
 		InMemoryStorage: InMemoryStorage{
 			urlMappings: make(map[string]string),

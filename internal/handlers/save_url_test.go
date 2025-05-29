@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/acavaka/shortlinker/internal/config"
+	"github.com/acavaka/shortlinker/internal/logger"
 	"github.com/acavaka/shortlinker/internal/service"
 	"github.com/acavaka/shortlinker/internal/storage"
 	"github.com/go-chi/chi/v5"
@@ -73,7 +74,7 @@ func TestSaveHandler(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			router := chi.NewRouter()
-			router.Post("/", SaveHandler(svc))
+			router.Post("/", SaveHandler(svc, cfg.Service.BaseURL, logger.Initialize()))
 
 			reqBody := strings.NewReader(tt.body)
 			r := httptest.NewRequest(tt.method, tt.route, reqBody)

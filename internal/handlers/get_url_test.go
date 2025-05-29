@@ -1,17 +1,19 @@
 package handlers
 
 import (
-	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/acavaka/shortlinker/internal/config"
+	"github.com/acavaka/shortlinker/internal/logger"
 	"github.com/acavaka/shortlinker/internal/service"
 )
 
@@ -86,7 +88,7 @@ func TestGetHandler(t *testing.T) {
 			mockedDB.On("Get", tt.route).Return(tt.longURL, tt.want.success)
 
 			router := chi.NewRouter()
-			router.Get("/{id}", GetHandler(svc))
+			router.Get("/{id}", GetHandler(svc, cfg.Service.BaseURL, logger.Initialize()))
 			r := httptest.NewRequest(tt.method, "/"+tt.route, http.NoBody)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, r)

@@ -46,14 +46,14 @@ func main() {
 	if cfg.Service.FileStoragePath == "" {
 		db = storage.NewMemoryStorage(cfg)
 	} else {
-		db, err = storage.NewFileStorage(cfg)
+		db, err = storage.NewFileStorage(cfg, log)
 		if err != nil {
 			log.Fatal("failed to load storage", zap.Error(err))
 		}
 	}
 
 	svc := &service.Service{DB: db, BaseURL: cfg.Service.BaseURL, FileStoragePath: cfg.Service.FileStoragePath}
-	r := handlers.NewRouter(svc)
+	r := handlers.NewRouter(svc, cfg.Service.BaseURL, log)
 
 	listener, err := net.Listen("tcp", normalizedAddr)
 	if err != nil {

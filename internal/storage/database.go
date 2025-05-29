@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/acavaka/shortlinker/internal/logger"
+	"go.uber.org/zap"
 )
 
 type URLRecord struct {
@@ -68,7 +68,7 @@ func ReadFileStorage(filename string) (map[string]string, error) {
 	return URLs, nil
 }
 
-func AppendToFile(filename, short, long string, uuid uint64) error {
+func AppendToFile(filename, short, long string, uuid uint64, logger *zap.Logger) error {
 	urlRecord := URLRecord{
 		UUID:        fmt.Sprintf("%d", uuid+1),
 		ShortURL:    short,
@@ -79,9 +79,9 @@ func AppendToFile(filename, short, long string, uuid uint64) error {
 		return fmt.Errorf("failed to open file %w", err)
 	}
 	defer func() {
-		err = file.Close()
+		err := file.Close()
 		if err != nil {
-			logger.Error("failed to close file", err)
+			logger.Error("failed to close file", zap.Error(err))
 		}
 	}()
 	data, err := json.Marshal(&urlRecord)

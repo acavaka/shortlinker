@@ -6,11 +6,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/acavaka/shortlinker/internal/logger"
-	"github.com/acavaka/shortlinker/internal/service"
+	"go.uber.org/zap"
 )
 
-func SaveHandler(svc *service.Service) http.HandlerFunc {
+func SaveHandler(svc URLSaver, baseURL string, logger *zap.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
@@ -19,7 +18,7 @@ func SaveHandler(svc *service.Service) http.HandlerFunc {
 
 		long, err := io.ReadAll(r.Body)
 		if err != nil {
-			logger.Error("failed to read body", err)
+			logger.Error("failed to read body", zap.Error(err))
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
@@ -44,9 +43,9 @@ func SaveHandler(svc *service.Service) http.HandlerFunc {
 
 		short := svc.SaveURL(urlStr)
 
-		resultURL, err := url.JoinPath(svc.BaseURL, short)
+		resultURL, err := url.JoinPath(baseURL, short)
 		if err != nil {
-			logger.Error("failed to join path to get result URL", err)
+			logger.Error("failed to join path to get result URL", zap.Error(err))
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -55,7 +54,7 @@ func SaveHandler(svc *service.Service) http.HandlerFunc {
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write([]byte(resultURL))
 		if err != nil {
-			logger.Error("failed to write the full URL response to client", err)
+			logger.Error("failed to write the full URL response to client", zap.Error(err))
 		}
 	}
 }

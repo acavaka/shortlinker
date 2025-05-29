@@ -49,7 +49,7 @@ func TestShortenHandler(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			router := chi.NewRouter()
-			router.Post(route, ShortenHandler(svc))
+			router.Post(route, ShortenHandler(svc, cfg.Service.BaseURL, logger.Initialize()))
 
 			reqBody := strings.NewReader(tc.body)
 			r := httptest.NewRequest(tc.method, route, reqBody)
@@ -59,7 +59,7 @@ func TestShortenHandler(t *testing.T) {
 			resBody, err := io.ReadAll(res.Body)
 			assert.NoError(t, err)
 			if err = res.Body.Close(); err != nil {
-				logger.Error("failed to close response body", err)
+				t.Error("failed to close response body", err)
 				return
 			}
 			assert.NotEmpty(t, resBody)
